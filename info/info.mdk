@@ -1,0 +1,33 @@
+Title         : ACorralando Contractor.NET
+Heading Base  : 2
+Author        : Lean
+
+[TITLE]
+
+# Contractor
+
+# Corral
+* Reachability Modulo Theories solver.
+* Usa un CEGAR loop para tratar de encontrar alguna instancia de las variables
+involucradas en el codigo a analizar que lleve a un bug.
+* Usa stratified inlining para evitar la exploracion exponencial del codigo al entrar
+en llamadas recursivas o a otros metodos. La idea es anular llamadas (To be continued)
+* Usa under y over approximation (3 posibles resultados: True Bug, No Bugs, Recursion Bound Reached)
+(todo parece indicar que es Sound a pesar de usar under approximation, por ahora sigue siendo
+una suposicion) 
+* Se basa fuertemente en la traduccion del codigo .NET a Boogie que provee el 
+proyecto BCT. Sin embargo, dicho proyecto mostro en reiteradas ocasiones fallar
+por no poder traducir.
+En particular, la API de Code Contracts no esta completamente implementada y las
+instrucciones de Requires y Ensures tienen que ser traduccidas como Assumes y 
+Asserts.
+
+
+# Propagando código
+La idea es eliminar transiciones que a pesar de ser logicamente validas. Si bien,
+se puede probar que existe alguna instancia que puede ejercitar una transicion
+o bien, no se puedo probar lo contrario (analisis no conclusivo) y se es conservador
+dicha transicion puede no ser factible.
+Esto puede pasar ya que para realizar el testeo de las transiciones solo se tiene 
+en cuenta el invariante del estado del cual parte la transicion. Dicho invariante
+puede ser mas debil de lo que en realidad el codigo puede probar... (To be continued)
