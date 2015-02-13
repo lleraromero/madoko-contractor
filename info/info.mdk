@@ -13,8 +13,7 @@ involucradas en el codigo a analizar que lleve a un bug.
 * Usa stratified inlining para evitar la exploracion exponencial del codigo al entrar
 en llamadas recursivas o a otros metodos. La idea es anular llamadas (To be continued)
 * Usa under y over approximation (3 posibles resultados: True Bug, No Bugs, Recursion Bound Reached)
-(todo parece indicar que es Sound a pesar de usar under approximation, por ahora sigue siendo
-una suposicion) 
+(todo parece indicar que es Sound a pesar de usar under approximation)
 * Se basa fuertemente en la traduccion del codigo .NET a Boogie que provee el 
 proyecto BCT. Sin embargo, dicho proyecto mostro en reiteradas ocasiones fallar
 por no poder traducir.
@@ -22,6 +21,23 @@ En particular, la API de Code Contracts no esta completamente implementada y las
 instrucciones de Requires y Ensures tienen que ser traduccidas como Assumes y 
 Asserts.
 
+## Corral como motor de decision
+El algoritmo principal de creacion de EPAs sigue siendo el mismo que es utilizado con Code Contracts [ICSE2011](http://www.google.com).
+
+La primer diferencia que existe con la implementacion de Code Contracts es que luego de generarse las queries y de ser incluidas en el assembly 
+utilizado para ejectuarlas, dll que solo contiene la clase a analizar, tienen que pasar por una etapa de traduccion.
+Para esta traduccion se utiliza el proyecto [BCT](http://bytecodetranslator.codeplex.com) que reescribe el codigo .NET en codigo Boogie.
+Una vez que la traduccion de la clase esta terminada, se realiza una llamada a Corral por cada query que se quiere analizar. Esta es una segunda diferencia
+con Code Contracts, ya que este ultimo requiere de una unica llamada para analizar toda una clase. Esto se realiza de esta manera ya que Corral
+necesita que se le especifique un unico entrypoint a partir del cual empezar a analizar.
+
+Dado que out-of-the-box Corral no provee un API para manipularlo, se modifico el codigo de la aplicacion de consola para que pueda ser llamado como un objeto de
+.NET. Ademas, como el resultado de la ejecucion es originalmente mostrado por consola, se utilizo un enum para poder devolver cualquiera de los posibles resultados.
+ Dichos resultados pueden ser:
+ * "True bug": Corral encontro unos valores de variables para los cuales encontro una traza que hacer fallar un Assert)
+ * "No bugs found - Proof computed": Corral puedo probar que no hay ejecucion posible que haga fallar los Asserts.
+ * "No bugs found - Proof not computed": Corral no encontro bugs, sin embargo, tampoco puedo probar que no exista algun caso que falle, ya que alcanzo la cota de recursiones
+ que esta dispuesto a intentar.
 
 # Propagando código
 La idea es eliminar transiciones que a pesar de ser logicamente validas. Si bien,
