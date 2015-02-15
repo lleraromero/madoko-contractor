@@ -33,11 +33,17 @@ necesita que se le especifique un unico entrypoint a partir del cual empezar a a
 
 Dado que out-of-the-box Corral no provee un API para manipularlo, se modifico el codigo de la aplicacion de consola para que pueda ser llamado como un objeto de
 .NET. Ademas, como el resultado de la ejecucion es originalmente mostrado por consola, se utilizo un enum para poder devolver cualquiera de los posibles resultados.
- Dichos resultados pueden ser:
- * "True bug": Corral encontro unos valores de variables para los cuales encontro una traza que hacer fallar un Assert)
- * "No bugs found - Proof computed": Corral puedo probar que no hay ejecucion posible que haga fallar los Asserts.
- * "No bugs found - Proof not computed": Corral no encontro bugs, sin embargo, tampoco puedo probar que no exista algun caso que falle, ya que alcanzo la cota de recursiones
+Dichos resultados pueden ser:
+
+* "True bug": Corral encontro unos valores de variables para los cuales encontro una traza que hacer fallar un Assert)
+* "No bugs found (Proof computed)": Corral puedo probar que no hay ejecucion posible que haga fallar los Asserts.
+* "No bugs found (Proof not computed) aka. Recursion Bound Reached ": Corral no encontro bugs, sin embargo, tampoco puedo probar que no exista algun caso que falle, ya que alcanzo la cota de recursiones
  que esta dispuesto a intentar.
+
+Cada vez que se analiza una query con Corral, para determinar si se agrega una transicion al EPA, se utiliza el resultado del analisis para clasificar la accion como Habilitada, Deshabilitada o ambas.
+TODO: explicar las dos etapas de uso de Corral
+
+
 
 # Propagando código
 La idea es eliminar transiciones que a pesar de ser logicamente validas. Si bien,
