@@ -1,4 +1,4 @@
-Title         : ACorralando Contractor.NET
+Title         : A*corral*ando Contractor.NET
 Heading Base  : 2
 Author        : Lean
 
@@ -10,42 +10,46 @@ Author        : Lean
 * Reachability Modulo Theories solver.
 * Usa un CEGAR loop para tratar de encontrar alguna instancia de las variables
 involucradas en el codigo a analizar que lleve a un bug.
-* Usa stratified inlining para evitar la exploracion exponencial del codigo al entrar
-en llamadas recursivas o a otros metodos. La idea es anular llamadas (To be continued)
+* Usa stratified inlining para evitar la exploracion exponencial del codigo al entrar en llamadas recursivas o a otros metodos. La idea es anular llamadas (To be continued)
 * Usa under y over approximation (3 posibles resultados: True Bug, No Bugs, Recursion Bound Reached)
-(todo parece indicar que es Sound a pesar de usar under approximation)
 * Se basa fuertemente en la traduccion del codigo .NET a Boogie que provee el 
-proyecto BCT. Sin embargo, dicho proyecto mostro en reiteradas ocasiones fallar
-por no poder traducir.
-En particular, la API de Code Contracts no esta completamente implementada y las
-instrucciones de Requires y Ensures tienen que ser traduccidas como Assumes y 
-Asserts.
+proyecto BCT. Sin embargo, dicho proyecto mostro en reiteradas ocasiones fallar por no poder traducir.
+En particular, la API de Code Contracts no esta completamente implementada y las instrucciones de Requires y Ensures tienen que ser traduccidas como Assumes y Asserts.
 
 ## Corral como motor de decision
-El algoritmo principal de creacion de EPAs sigue siendo el mismo que es utilizado con Code Contracts [ICSE2011](http://www.google.com).
+El algoritmo principal de creacion de EPAs sigue siendo el mismo que es utilizado con Code Contracts, propuesto en [Program Abstractions for Behaviour Validation][ICSE2011].
 
 La primer diferencia que existe con la implementacion de Code Contracts es que luego de generarse las queries y de ser incluidas en el assembly 
 utilizado para ejectuarlas, dll que solo contiene la clase a analizar, tienen que pasar por una etapa de traduccion.
-Para esta traduccion se utiliza el proyecto [BCT](http://bytecodetranslator.codeplex.com) que reescribe el codigo .NET en codigo Boogie.
+Para esta traduccion se utiliza el proyecto [BCT] que reescribe el codigo .NET en codigo Boogie.
 Una vez que la traduccion de la clase esta terminada, se realiza una llamada a Corral por cada query que se quiere analizar. Esta es una segunda diferencia
 con Code Contracts, ya que este ultimo requiere de una unica llamada para analizar toda una clase. Esto se realiza de esta manera ya que Corral
 necesita que se le especifique un unico entrypoint a partir del cual empezar a analizar.
 
-Dado que out-of-the-box Corral no provee un API para manipularlo, se modifico el codigo de la aplicacion de consola para que pueda ser llamado como un objeto de
-.NET. Ademas, como el resultado de la ejecucion es originalmente mostrado por consola, se utilizo un enum para poder devolver cualquiera de los posibles resultados.
+Dado que out-of-the-box Corral no provee un API para manipularlo, se modifico el codigo de la aplicacion de consola para que pueda ser llamado como un objeto de .NET. Ademas, como el resultado de la ejecucion es originalmente mostrado por consola, se utilizo un enum para poder devolver cualquiera de los posibles resultados.
 Dichos resultados pueden ser:
 
-* "True bug": Corral encontro unos valores de variables para los cuales encontro una traza que hacer fallar un Assert)
+* "True bug": Corral encontro valores de variables para los cuales hallo una traza que hacer fallar un Assert
 * "No bugs found (Proof computed)": Corral puedo probar que no hay ejecucion posible que haga fallar los Asserts.
-* "No bugs found (Proof not computed) aka. Recursion Bound Reached ": Corral no encontro bugs, sin embargo, tampoco puedo probar que no exista algun caso que falle, ya que alcanzo la cota de recursiones
- que esta dispuesto a intentar.
+* "No bugs found (Proof not computed) aka. Recursion Bound Reached ": Corral no encontro bugs, sin embargo, tampoco puedo probar que no exista algun caso que falle, ya que alcanzo la cota de recursiones que esta dispuesto a intentar.
 
-Cada vez que se analiza una query con Corral, para determinar si se agrega una transicion al EPA, se utiliza el resultado del analisis para clasificar la accion como Habilitada, Deshabilitada o ambas.
-TODO: explicar las dos etapas de uso de Corral
+Las queries se generan en dos momentos de la generacion del EPA. La primer etapa es cuando se intenta responder a la pregunta _¿que acciones quedan habilitadas si estoy en un estado's' y ejecuto la accion disponible a'?_
+
+Para responder a esta pregunta se crea por cada accion a testear 't' una query positiva y otra negativa. Las queries positivas intentan probar que desde 's'ejecutando 'a' se puede probar la precondicion de 't'. Analogamente, las negativas intentan probar la negacion de la precondicion de 't'.
+
+Una vez obtenidos los resultados de Corral se agregan las acciones tanto a la listas de habilitadas como de deshabilitadas y luego se procede a clasificarlas de la siguiente manera:
+
+* Si el resultado es "No bugs (proof computed)", no se hace nada
+* Si el resultado es "True bug" o "Recursion Bound Reached"
+  + Si la query era positiva se quita la accion de la lista de habilitadas
+  + Si la query era negativa se quita la accion de la lista de deshabilitadas
+
+
+Cada vez que se analiza una query con Corral, para determinar si se agrega una transicion al EPA, se utiliza el resultado del analisis para clasificar la accion como _habilitada_, _deshabilitada_ o ambas.
 
 
 
-# Propagando código
+# Propagar código para eliminar transiciones infactibles
 La idea es eliminar transiciones que a pesar de ser logicamente validas. Si bien,
 se puede probar que existe alguna instancia que puede ejercitar una transicion
 o bien, no se puedo probar lo contrario (analisis no conclusivo) y se es conservador
@@ -53,3 +57,7 @@ dicha transicion puede no ser factible.
 Esto puede pasar ya que para realizar el testeo de las transiciones solo se tiene 
 en cuenta el invariante del estado del cual parte la transicion. Dicho invariante
 puede ser mas debil de lo que en realidad el codigo puede probar... (To be continued)
+
+
+[ICSE2011]: "http://publicaciones.dc.uba.ar/Publications/2011/DBGU11/paper-icse-2011.pdf" 
+[BCT]: http://bytecodetranslator.codeplex.com
