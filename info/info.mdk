@@ -23,29 +23,41 @@ La primer diferencia que existe con la implementación de Code Contracts es que 
 utilizado para ejecutarlas, dll que solo contiene la clase a analizar, tienen que pasar por una etapa de traducción.
 Para esta traducción se utiliza el proyecto [BCT] que reescribe el código .NET en código Boogie.
 Una vez que la traducción de la clase esta terminada, se realiza una llamada a Corral por cada query que se quiere analizar. Esta es una segunda diferencia
-con Code Contracts, ya que este ultimo requiere de una única llamada para analizar toda una clase. Esto se realiza de esta manera ya que Corral
+con Code Contracts, ya que este último requiere de una única llamada para analizar toda una clase. Esto se realiza de esta manera ya que Corral
 necesita que se le especifique un único entrypoint a partir del cual empezar a analizar.
 
-Dado que out-of-the-box Corral no provee un API para manipularlo, se modifico el código de la aplicación de consola para que pueda ser llamado como un objeto de .NET. Además, como el resultado de la ejecución es originalmente mostrado por consola, se utilizo un enum para poder devolver cualquiera de los posibles resultados.
+Dado que out-of-the-box Corral no provee un API para manipularlo, se modificó  el código de la aplicación de consola para que pueda ser llamado como un objeto de .NET. Además, como el resultado de la ejecución es originalmente mostrado por consola, se utilizó un enum para poder devolver cualquiera de los posibles resultados.
 Dichos resultados pueden ser:
 
-* "True bug": Corral encontró valores de variables para los cuales hallo una traza que hacer fallar un Assert
+* "True bug": Corral encontró valores de variables para los cuales halló una traza que hace fallar un Assert
 * "No bugs found (Proof computed)": Corral puedo probar que no hay ejecución posible que haga fallar los Asserts.
-* "No bugs found (Proof not computed) aka. Recursion Bound Reached ": Corral no encontró bugs, sin embargo, tampoco puedo probar que no exista algún caso que falle, ya que alcanzo la cota de recursiones que esta dispuesto a intentar.
+* "No bugs found (Proof not computed) aka. Recursion Bound Reached ": Corral no encontró bugs, sin embargo, tampoco puedo probar que no exista algún caso que falle, ya que alcanzo la cota de recursiones que está dispuesto a intentar.
 
-Las queries se generan en dos momentos de la generación del EPA. La primer etapa es cuando se intenta responder a la pregunta _¿qué acciones quedan habilitadas si estoy en un estado's' y ejecuto la acción a'?_
+Las queries se generan en dos momentos de la generación del EPA. La primer etapa es cuando se intenta responder a la pregunta _¿qué acciones quedan habilitadas si estoy en un estado 's' y ejecuto la acción 'a'?_
 
-Para responder a esta pregunta se crea por cada acción a testear 't' una query positiva y otra negativa. Las queries positivas intentan probar que desde 's'ejecutando 'a' se puede probar la precondicion de 't'. Análogamente, las negativas intentan probar la negación de la precondicion de 't'.
+Para responder a esta pregunta se crea por cada acción a testear 't' una query positiva y otra negativa. Las queries positivas intentan probar que desde 's' ejecutando 'a' se puede probar la precondicion de 't'. Análogamente, las negativas intentan probar la negación de la precondicion de 't'.
+Una vez generadas se realizan todas las llamadas correspondientes para analizarlas y obtener el resultado de Corral.
 
-Para eso se agregan todas las acciones a los dos conjuntos, habilitadas y deshabilitadas y se ejecuta Corral para analizarlas.
-Una vez obtenidos los resultados de Corral se evalúa cada query de la siguiente manera:
+Para clasificar las acciones se crean dos conjuntos: *habilitadas* y *deshabilitadas*. Estos conjuntos contienen inicialmente todas las acciones.
+
+Luego, se evalúa el resultado de cada query de la siguiente manera:
 
 * Si el resultado es "No bugs (proof computed)", no se hace nada.
 * Si el resultado es "True bug" o "Recursion Bound Reached"
-  + y la query era positiva, no pude probar $inv(s) \land pre(a) \rightarrow pre(t)$, se quita 'a' de las habilitadas.
-  + y la query era negativa, no pude probar $inv(s) \land pre(a) \rightarrow \neg pre(t)$, se quita 'a' de deshabilitadas.
+  + y la query era positiva, no pude probar $inv(s) \land pre(a) \rightarrow pre(t)$, se quita 'a' de *habilitadas*.
+  + y la query era negativa, no pude probar $inv(s) \land pre(a) \rightarrow \neg pre(t)$, se quita 'a' de *deshabilitadas*.
 
-La segunda etapa es para responder la pregunta ¿qué estados son alcanzables si estoy en el estado 's' y ejecuto la acción 'a'?
+De esta manera, nos quedan definidos los conjuntos *habilitadas*, *deshabilitadas* y un grupo de acciones que no pertenecen a ninguno de los conjuntos anteriores.
+
+Con estos conjuntos es posible definir todos los posibles estados alcanzables desde 's'.
+
+La segunda etapa es para responder la pregunta ¿qué estados son efectivamente alcanzables si estoy en el estado 's' y ejecuto la acción 'a'?
+
+En este caso, se crea una sola query negativa por cada tupla (origen, acción, destino). De manera similar el resultado de la ejecución de Corral se interpreta con las siguientes reglas:
+
+* Si el resultado es "No bugs (proof computed)", no se agrega la transición al EPA.
+* Si el resultado es "True bug", se agrega la transición al EPA.
+* Si el resultado es "Recursion Bound Reached", se agrega la transición al EPA pero distinguida con '?' ya que no hay garantías de que sea posible ejercitarla.
 
 
 # Propagar código para eliminar transiciones infactibles
