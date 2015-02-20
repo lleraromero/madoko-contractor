@@ -33,7 +33,7 @@ Dichos resultados pueden ser:
 * "No bugs found (Proof computed)": Corral puedo probar que no hay ejecucion posible que haga fallar los Asserts.
 * "No bugs found (Proof not computed) aka. Recursion Bound Reached ": Corral no encontro bugs, sin embargo, tampoco puedo probar que no exista algun caso que falle, ya que alcanzo la cota de recursiones que esta dispuesto a intentar.
 
-Las queries se generan en dos momentos de la generacion del EPA. La primer etapa es cuando se intenta responder a la pregunta _¿que acciones quedan habilitadas si estoy en un estado's' y ejecuto la accion disponible a'?_
+Las queries se generan en dos momentos de la generacion del EPA. La primer etapa es cuando se intenta responder a la pregunta _¿que acciones quedan habilitadas si estoy en un estado's' y ejecuto la accion a'?_
 
 Para responder a esta pregunta se crea por cada accion a testear 't' una query positiva y otra negativa. Las queries positivas intentan probar que desde 's'ejecutando 'a' se puede probar la precondicion de 't'. Analogamente, las negativas intentan probar la negacion de la precondicion de 't'.
 
@@ -45,7 +45,6 @@ Una vez obtenidos los resultados de Corral se agregan las acciones tanto a la li
   + Si la query era negativa se quita la accion de la lista de deshabilitadas
 
 
-Cada vez que se analiza una query con Corral, para determinar si se agrega una transicion al EPA, se utiliza el resultado del analisis para clasificar la accion como _habilitada_, _deshabilitada_ o ambas.
 
 
 
