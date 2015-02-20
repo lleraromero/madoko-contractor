@@ -9,53 +9,46 @@ Author        : Lean
 # Corral
 * Reachability Modulo Theories solver.
 * Usa un CEGAR loop para tratar de encontrar alguna instancia de las variables
-involucradas en el codigo a analizar que lleve a un bug.
-* Usa stratified inlining para evitar la exploracion exponencial del codigo al entrar en llamadas recursivas o a otros metodos. La idea es anular llamadas (To be continued)
+involucradas en el código a analizar que lleve a un bug.
+* Usa stratified inlining para evitar la exploración exponencial del código al entrar en llamadas recursivas o a otros métodos. La idea es anular llamadas (To be continued)
 * Usa under y over approximation (3 posibles resultados: True Bug, No Bugs, Recursion Bound Reached)
-* Se basa fuertemente en la traduccion del codigo .NET a Boogie que provee el 
-proyecto BCT. Sin embargo, dicho proyecto mostro en reiteradas ocasiones fallar por no poder traducir.
-En particular, la API de Code Contracts no esta completamente implementada y las instrucciones de Requires y Ensures tienen que ser traduccidas como Assumes y Asserts.
+* Se basa fuertemente en la traducción del código .NET a Boogie que provee el 
+proyecto BCT. Sin embargo, dicho proyecto mostró en reiteradas ocasiones fallar por no poder traducir.
+En particular, la API de Code Contracts no esta completamente implementada y las instrucciones de Requires y Ensures tienen que ser traducidas como Assumes y Asserts.
 
-## Corral como motor de decision
-El algoritmo principal de creacion de EPAs sigue siendo el mismo que es utilizado con Code Contracts, propuesto en [Program Abstractions for Behaviour Validation][ICSE2011].
+## Corral como motor de decisión
+El algoritmo principal de creación de EPAs sigue siendo el mismo que es utilizado con Code Contracts, propuesto en [Program Abstractions for Behaviour Validation][ICSE2011].
 
-La primer diferencia que existe con la implementacion de Code Contracts es que luego de generarse las queries y de ser incluidas en el assembly 
-utilizado para ejectuarlas, dll que solo contiene la clase a analizar, tienen que pasar por una etapa de traduccion.
-Para esta traduccion se utiliza el proyecto [BCT] que reescribe el codigo .NET en codigo Boogie.
-Una vez que la traduccion de la clase esta terminada, se realiza una llamada a Corral por cada query que se quiere analizar. Esta es una segunda diferencia
-con Code Contracts, ya que este ultimo requiere de una unica llamada para analizar toda una clase. Esto se realiza de esta manera ya que Corral
-necesita que se le especifique un unico entrypoint a partir del cual empezar a analizar.
+La primer diferencia que existe con la implementación de Code Contracts es que luego de generarse las queries y de ser incluidas en el assembly 
+utilizado para ejecutarlas, dll que solo contiene la clase a analizar, tienen que pasar por una etapa de traducción.
+Para esta traducción se utiliza el proyecto [BCT] que reescribe el código .NET en código Boogie.
+Una vez que la traducción de la clase esta terminada, se realiza una llamada a Corral por cada query que se quiere analizar. Esta es una segunda diferencia
+con Code Contracts, ya que este ultimo requiere de una única llamada para analizar toda una clase. Esto se realiza de esta manera ya que Corral
+necesita que se le especifique un único entrypoint a partir del cual empezar a analizar.
 
-Dado que out-of-the-box Corral no provee un API para manipularlo, se modifico el codigo de la aplicacion de consola para que pueda ser llamado como un objeto de .NET. Ademas, como el resultado de la ejecucion es originalmente mostrado por consola, se utilizo un enum para poder devolver cualquiera de los posibles resultados.
+Dado que out-of-the-box Corral no provee un API para manipularlo, se modifico el código de la aplicación de consola para que pueda ser llamado como un objeto de .NET. Además, como el resultado de la ejecución es originalmente mostrado por consola, se utilizo un enum para poder devolver cualquiera de los posibles resultados.
 Dichos resultados pueden ser:
 
-* "True bug": Corral encontro valores de variables para los cuales hallo una traza que hacer fallar un Assert
-* "No bugs found (Proof computed)": Corral puedo probar que no hay ejecucion posible que haga fallar los Asserts.
-* "No bugs found (Proof not computed) aka. Recursion Bound Reached ": Corral no encontro bugs, sin embargo, tampoco puedo probar que no exista algun caso que falle, ya que alcanzo la cota de recursiones que esta dispuesto a intentar.
+* "True bug": Corral encontró valores de variables para los cuales hallo una traza que hacer fallar un Assert
+* "No bugs found (Proof computed)": Corral puedo probar que no hay ejecución posible que haga fallar los Asserts.
+* "No bugs found (Proof not computed) aka. Recursion Bound Reached ": Corral no encontró bugs, sin embargo, tampoco puedo probar que no exista algún caso que falle, ya que alcanzo la cota de recursiones que esta dispuesto a intentar.
 
-Las queries se generan en dos momentos de la generacion del EPA. La primer etapa es cuando se intenta responder a la pregunta _¿que acciones quedan habilitadas si estoy en un estado's' y ejecuto la accion a'?_
+Las queries se generan en dos momentos de la generación del EPA. La primer etapa es cuando se intenta responder a la pregunta _¿qué acciones quedan habilitadas si estoy en un estado's' y ejecuto la acción a'?_
 
-Para responder a esta pregunta se crea por cada accion a testear 't' una query positiva y otra negativa. Las queries positivas intentan probar que desde 's'ejecutando 'a' se puede probar la precondicion de 't'. Analogamente, las negativas intentan probar la negacion de la precondicion de 't'.
+Para responder a esta pregunta se crea por cada acción a testear 't' una query positiva y otra negativa. Las queries positivas intentan probar que desde 's'ejecutando 'a' se puede probar la precondicion de 't'. Análogamente, las negativas intentan probar la negación de la precondicion de 't'.
 
-Una vez obtenidos los resultados de Corral se agregan las acciones tanto a la listas de habilitadas como de deshabilitadas y luego se procede a clasificarlas de la siguiente manera:
+Se agregan todas las acciones a los dos conjuntos, habilitadas y deshabilitadas.
+Una vez obtenidos los resultados de Corral se evalúa cada query de la siguiente manera:
 
 * Si el resultado es "No bugs (proof computed)", no se hace nada
 * Si el resultado es "True bug" o "Recursion Bound Reached"
-  + Si la query era positiva se quita la accion de la lista de habilitadas
-  + Si la query era negativa se quita la accion de la lista de deshabilitadas
-
-
-
+  + y la query era positiva, no pude probar $inv(s) \land pre(a) \rightarrow pre(t)$, se quita 'a' de las habilitadas.
+  + y la query era negativa, no pude probar $inv(s) \land pre(a) \rightarrow \neg pre(t)$, se quita 'a' de deshabilitadas.
 
 
 # Propagar código para eliminar transiciones infactibles
-La idea es eliminar transiciones que a pesar de ser logicamente validas. Si bien,
-se puede probar que existe alguna instancia que puede ejercitar una transicion
-o bien, no se puedo probar lo contrario (analisis no conclusivo) y se es conservador
-dicha transicion puede no ser factible.
-Esto puede pasar ya que para realizar el testeo de las transiciones solo se tiene 
-en cuenta el invariante del estado del cual parte la transicion. Dicho invariante
-puede ser mas debil de lo que en realidad el codigo puede probar... (To be continued)
+La idea es eliminar transiciones que a pesar de ser lógicamente validas. Si bien, se puede probar que existe alguna instancia que puede ejercitar una transición o bien, no se puedo probar lo contrario (análisis no conclusivo) y se es conservador dicha transición puede no ser factible.
+Esto puede pasar ya que para realizar el testeo de las transiciones solo se tiene en cuenta el invariante del estado del cual parte la transición. Dicho invariante puede ser mas débil de lo que en realidad el código puede probar... (To be continued)
 
 
 [ICSE2011]: "http://publicaciones.dc.uba.ar/Publications/2011/DBGU11/paper-icse-2011.pdf" 
