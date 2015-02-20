@@ -37,13 +37,15 @@ Las queries se generan en dos momentos de la generación del EPA. La primer etap
 
 Para responder a esta pregunta se crea por cada acción a testear 't' una query positiva y otra negativa. Las queries positivas intentan probar que desde 's'ejecutando 'a' se puede probar la precondicion de 't'. Análogamente, las negativas intentan probar la negación de la precondicion de 't'.
 
-Se agregan todas las acciones a los dos conjuntos, habilitadas y deshabilitadas.
+Para eso se agregan todas las acciones a los dos conjuntos, habilitadas y deshabilitadas y se ejecuta Corral para analizarlas.
 Una vez obtenidos los resultados de Corral se evalúa cada query de la siguiente manera:
 
-* Si el resultado es "No bugs (proof computed)", no se hace nada
+* Si el resultado es "No bugs (proof computed)", no se hace nada.
 * Si el resultado es "True bug" o "Recursion Bound Reached"
   + y la query era positiva, no pude probar $inv(s) \land pre(a) \rightarrow pre(t)$, se quita 'a' de las habilitadas.
   + y la query era negativa, no pude probar $inv(s) \land pre(a) \rightarrow \neg pre(t)$, se quita 'a' de deshabilitadas.
+
+La segunda etapa es para responder la pregunta ¿qué estados son alcanzables si estoy en el estado 's' y ejecuto la acción 'a'?
 
 
 # Propagar código para eliminar transiciones infactibles
