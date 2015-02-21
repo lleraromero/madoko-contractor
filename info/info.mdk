@@ -60,7 +60,7 @@ En este caso, se crea una sola query negativa por cada tupla (origen, acción, d
 * Si el resultado es "Recursion Bound Reached", se agrega la transición al EPA pero distinguida con '?' ya que no hay garantías de que sea posible ejercitarla.
 
 
-# Propagar código para eliminar transiciones infactibles
+# Propagar código para eliminar transiciones no factibles
 La idea es eliminar transiciones que a pesar de ser lógicamente validas. Si bien, se puede probar que existe alguna instancia que puede ejercitar una transición o bien, no se puedo probar lo contrario (análisis no conclusivo) y se es conservador dicha transición puede no ser factible.
 Esto puede pasar ya que para realizar el testeo de las transiciones solo se tiene en cuenta el invariante del estado del cual parte la transición. Dicho invariante puede ser mas débil de lo que en realidad el código puede probar... (To be continued)
 
