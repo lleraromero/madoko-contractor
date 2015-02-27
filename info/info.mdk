@@ -129,19 +129,7 @@ Luego, el EPA quedaria de la siguiente manera:
 
 ![code_test_post]
 
-##¿Como implementar esta propagacion?
-Hint: Parto del invariante del estado inicial y hago una query que concatena todos los metodos que componen el camino desde el inicial al estado de la transicion que estoy tratando de probar.
-
-¿Que pasa si el EPA no es aciclico? So far, no tengo idea :P
-
-(Seguir escribiendo...)
-
-
-[code_test]: images/code_test.png "code_test" { width=auto max-width=90% }
-
-[code_test_post]: images/code_test_post.png "code_test_post" { width=auto max-width=90% }
-
-
+(Un caso mas grande, seguir escribiendo)
 
 Ejemplo de EPA antes de ser procesada.
 
@@ -151,10 +139,19 @@ Luego de remover las transiciones no factibles.
 
 ![code_motivation_post]
 
+
+##¿Como implementar esta propagacion?
+Hint: Parto del invariante del estado inicial y hago una query que concatena todos los metodos que componen el camino desde el inicial al estado de la transicion que estoy tratando de probar.
+
+¿Que pasa si el EPA no es aciclico? So far, no tengo idea :P
+
+(Seguir escribiendo...)
+
+
+[code_test]: images/code_test.png "code_test" { width=auto max-width=90% }
+[code_test_post]: images/code_test_post.png "code_test_post" { width=auto max-width=90% }
 [code_motivation]: images/code_motivation.png "code_motivation" { width=auto max-width=90% }
-
 [code_motivation_post]: images/code_motivation_post.png "code_motivation_post" { width=auto max-width=90% }
-
 
 [ICSE2011]: "http://publicaciones.dc.uba.ar/Publications/2011/DBGU11/paper-icse-2011.pdf" 
 [BCT]: http://bytecodetranslator.codeplex.com
