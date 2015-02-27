@@ -62,8 +62,98 @@ En este caso, se crea una sola query negativa por cada tupla (origen, acción, d
 
 
 # Propagar código para eliminar transiciones no factibles
-La idea es eliminar transiciones que a pesar de ser lógicamente validas. Si bien, se puede probar que existe alguna instancia que puede ejercitar una transición o bien, no se puedo probar lo contrario (análisis no conclusivo) y se es conservador dicha transición puede no ser factible.
-Esto puede pasar ya que para realizar el testeo de las transiciones solo se tiene en cuenta el invariante del estado del cual parte la transición. Dicho invariante puede ser mas débil de lo que en realidad el código puede probar... (To be continued)
+La idea es eliminar transiciones que a pesar de ser lógicamente validas, son no factibles si se tiene en cuenta transiciones previas.
+Esto puede pasar ya que de la forma en la que el EPA es generado, el testeo de las transiciones solo tiene en cuenta el invariante del estado del cual parte la transición y a cual pretende llegar. 
+
+Si el invariante es mas débil de lo que en realidad el código puede probar podria suceder que aquellas configuraciones que habilitan dicha transicion no sean validas considerando un invariante mas fuerte.
+
+Como motivacion consideremos la siguiente clase
+~ Columns
+~~ Column { width="30%" }
+``` csharp
+class CodePropagation01
+{
+    public int x { get; private set; }
+    public int y { get; private set; }
+
+    public CodePropagation01()
+    {
+        x = 0; y = 0;
+
+    }
+
+    public void m1()
+    {
+        Contract.Requires(x == 0 && y == 0);
+        x = 5;
+    }
+
+```
+~~
+~~ Column
+``` csharp
+      
+      
+      ...
+      
+      public void m2()
+      {
+          Contract.Requires(x > 0 && y == 0);
+          y = 7;
+      }
+  
+      public void m3()
+      {
+          Contract.Requires(x == 5 && y == 7);
+          x = 3; y = 3;
+      }
+  }
+```
+~~
+~
+
+Si generamos el EPA de `CodePropagation01`{language=csharp} el resultado que obtenemos es el que aparece a continuacion:
+
+![code_test]
+
+Como se puede observar, el estado *m2* permite probar dos posibles configuraciones, la primera en la que el unico metodo habilitado es el *m3* y otra en la que no hay metodos habilitados.
+Si miramos detenidamente el codigo, podremos notar que los metodos *m1, m2, m3* estan pensados para ser ejecutados secuencialmente.
+
+Entonces, ¿por que el EPA muestra que existe una alternativa a esta secuencia ($\{m2\}\rightarrow \{\})$?
+
+El invariante de *m2*: $(x \neq 0 \lor y \neq 0) \land (x > 0 \land y = 0) \land (x \neq 5 \lor y \neq 7)$
+Si consideramos este invariante como punto de partida, es cierto que uno puede probar los invariantes del estado *m3* y del estado vacio. Sin embargo, si consideramos que la **unica** forma de llegar al estado *m2* es a traves de la ejecucion del constructor y a continuacion el metodo m1, podemos reforzar dicho invariante con ($x = 5 \land y = 0$).
+De esta forma, si volvemos a intentar probar la transicion $\{m2\} \rightarrow \{\}$ en esta oportunidad no vamos a poder lograrlo.
+
+Luego, el EPA quedaria de la siguiente manera:
+
+![code_test_post]
+
+##¿Como implementar esta propagacion?
+Hint: Parto del invariante del estado inicial y hago una query que concatena todos los metodos que componen el camino desde el inicial al estado de la transicion que estoy tratando de probar.
+
+¿Que pasa si el EPA no es aciclico? So far, no tengo idea :P
+
+(Seguir escribiendo...)
+
+
+[code_test]: images/code_test.png "code_test" { width=auto max-width=90% }
+
+[code_test_post]: images/code_test_post.png "code_test_post" { width=auto max-width=90% }
+
+
+
+Ejemplo de EPA antes de ser procesada.
+
+![code_motivation]
+
+Luego de remover las transiciones no factibles.
+
+![code_motivation_post]
+
+[code_motivation]: images/code_motivation.png "code_motivation" { width=auto max-width=90% }
+
+[code_motivation_post]: images/code_motivation_post.png "code_motivation_post" { width=auto max-width=90% }
 
 
 [ICSE2011]: "http://publicaciones.dc.uba.ar/Publications/2011/DBGU11/paper-icse-2011.pdf" 
