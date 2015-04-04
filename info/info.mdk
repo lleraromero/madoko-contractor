@@ -17,6 +17,17 @@ involucradas en el código a analizar que lleve a un bug.
 proyecto BCT. Sin embargo, dicho proyecto mostró en reiteradas ocasiones fallar por no poder traducir.
 En particular, la API de Code Contracts no esta completamente implementada y las instrucciones de Requires y Ensures tienen que ser traducidas como Assumes y Asserts.
 
+## Stratified inlining
+Esta sección presenta la idea de _stratified inlining_ (SI) utilizada por Corral para resolver el problema de reachability con respecto a una cota $b$. El objetivo de SI es tratar de demorar la construcción de formulas de tamaño exponencial lo mas posible.
+
+A diferencia de _static inlining_, que reemplaza todas las llamadas a métodos por sus respectivos cuerpos, SI va incluyendo los cuerpos a medida que va encontrando caminos prometedores para alcanzar el objetivo.
+
+SI funciona de la siguiente manera: en todo momento, SI mantiene un programa $P$ parcialmente ("inlined" ?), junto con un conjunto de ("call-sites" ?) $C$ en $P$ que todavía no han sido  ("inlined" ?). &br;
+Inicialmente, $P$ es el **main** y $C$ es el conjunto de todos los ("call-sites" ?) en el **main**. Luego, se le envía una consulta al theorem prover para ver si en $P$ hay alguna ejecución valida de **main**, que no pase por ninguno de los ("call-sites" ?) que hay en $C$, que alcance el objetivo. De haberla, dicha ejecución es la prueba de que el objetivo es alcanzable. &br; 
+Si no, se le vuelve a preguntar al theorem prover si puede encontrar una ejecución valida, pero esta vez pudiendo pasar por los call-sites de $C$, bajo la suposición de que dichas llamadas pueden alterar el estado del programa de forma arbitraria. Cabe destacar que esta ultima suposición, representa claramente una sobre aproximación del programa $P$. Es por esto, que si el theorem prover determina que no es posible encontrar una ejecución para esta consulta entonces el objetivo no es alcanzable. &br;
+Por el contrario, si existiese, dicha traza utiliza al menos uno de los call-sites de $C$. Luego dichas llamadas son inlined, siempre y cuando no se supere la cota de recursión, y el proceso se vuelve a repetir.
+
+
 ## Corral como motor de decisión
 El algoritmo principal de creación de EPAs sigue siendo el mismo que es utilizado con Code Contracts, propuesto en [Program Abstractions for Behaviour Validation][ICSE2011].
 
